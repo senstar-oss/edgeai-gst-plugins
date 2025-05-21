@@ -89,7 +89,6 @@ typedef struct _GstTIOVXBufferPoolPrivate
 
   vx_reference exemplar;
   guint num_channels;
-  gsize size;
 } GstTIOVXBufferPoolPrivate;
 
 G_DEFINE_TYPE_WITH_CODE (GstTIOVXBufferPool, gst_tiovx_buffer_pool,
@@ -107,7 +106,7 @@ static gboolean gst_tiovx_buffer_pool_set_config (GstBufferPool * pool,
 static void gst_tiovx_buffer_pool_finalize (GObject * object);
 
 static void
-gst_tiovx_buffer_pool_class_init (GstTIOVXBufferPoolClass *klass)
+gst_tiovx_buffer_pool_class_init (GstTIOVXBufferPoolClass * klass)
 {
   GObjectClass *o_class = G_OBJECT_CLASS (klass);
   GstBufferPoolClass *bp_class = GST_BUFFER_POOL_CLASS (klass);
@@ -121,7 +120,7 @@ gst_tiovx_buffer_pool_class_init (GstTIOVXBufferPoolClass *klass)
 }
 
 static void
-gst_tiovx_buffer_pool_init (GstTIOVXBufferPool *self)
+gst_tiovx_buffer_pool_init (GstTIOVXBufferPool * self)
 {
   GstTIOVXBufferPoolPrivate *priv =
       gst_tiovx_buffer_pool_get_instance_private (self);
@@ -130,11 +129,10 @@ gst_tiovx_buffer_pool_init (GstTIOVXBufferPool *self)
   priv->allocator = NULL;
   priv->exemplar = NULL;
   priv->num_channels = 0;
-  priv->size = 0;
 }
 
 static gboolean
-gst_tiovx_buffer_pool_set_config (GstBufferPool *pool, GstStructure *config)
+gst_tiovx_buffer_pool_set_config (GstBufferPool * pool, GstStructure * config)
 {
   GstTIOVXBufferPool *self = GST_TIOVX_BUFFER_POOL (pool);
   GstTIOVXBufferPoolPrivate *priv =
@@ -217,11 +215,9 @@ gst_tiovx_buffer_pool_set_config (GstBufferPool *pool, GstStructure *config)
   }
 
   priv->allocator = GST_TIOVX_ALLOCATOR (allocator);
-  priv->size = size;
 
   GST_DEBUG_OBJECT (self,
-      "Setting TIOVX pool configuration with caps %" GST_PTR_FORMAT
-      " and size %u", caps, size);
+      "Setting TIOVX pool configuration with caps %" GST_PTR_FORMAT, caps);
 
   return
       GST_BUFFER_POOL_CLASS (gst_tiovx_buffer_pool_parent_class)->set_config
@@ -232,8 +228,8 @@ error:
 }
 
 static GstFlowReturn
-gst_tiovx_buffer_pool_alloc_buffer (GstBufferPool *pool, GstBuffer **buffer,
-    GstBufferPoolAcquireParams *params)
+gst_tiovx_buffer_pool_alloc_buffer (GstBufferPool * pool, GstBuffer ** buffer,
+    GstBufferPoolAcquireParams * params)
 {
   GstTIOVXBufferPool *self = GST_TIOVX_BUFFER_POOL (pool);
   GstTIOVXBufferPoolPrivate *priv =
@@ -245,18 +241,12 @@ gst_tiovx_buffer_pool_alloc_buffer (GstBufferPool *pool, GstBuffer **buffer,
   GstTIOVXMemoryData *ti_memory = NULL;
   gsize memory_size = 0;
 
+  GST_DEBUG_OBJECT (self, "Allocating TIOVX buffer");
+
   g_return_val_if_fail (priv->exemplar, GST_FLOW_ERROR);
 
-  memory_size = gst_tiovx_get_size_from_exemplar (priv->exemplar);
-  if (memory_size < priv->size) {
-    GST_DEBUG_OBJECT (self, "Each channel needs %zu bytes, not %zu bytes",
-        priv->size, memory_size);
-    memory_size = priv->size;
-  }
-
-  memory_size *= priv->num_channels;
-
-  GST_DEBUG_OBJECT (self, "Allocating TIOVX buffer of size %zu", memory_size);
+  memory_size =
+      gst_tiovx_get_size_from_exemplar (priv->exemplar) * priv->num_channels;
 
   if (0 >= memory_size) {
     GST_ERROR_OBJECT (pool, "Failed to get size from exemplar");
@@ -304,7 +294,7 @@ out:
 }
 
 static void
-gst_tiovx_buffer_pool_finalize (GObject *object)
+gst_tiovx_buffer_pool_finalize (GObject * object)
 {
   GstTIOVXBufferPool *self = GST_TIOVX_BUFFER_POOL (object);
   GstTIOVXBufferPoolPrivate *priv =
@@ -324,7 +314,7 @@ gst_tiovx_buffer_pool_finalize (GObject *object)
 }
 
 static void
-gst_tiovx_buffer_pool_free_buffer (GstBufferPool *pool, GstBuffer *buffer)
+gst_tiovx_buffer_pool_free_buffer (GstBufferPool * pool, GstBuffer * buffer)
 {
   GstTIOVXBufferPoolClass *klass = GST_TIOVX_BUFFER_POOL_GET_CLASS (pool);
 
