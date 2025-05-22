@@ -630,6 +630,7 @@ gst_tiovx_get_exemplar_from_caps (GObject * object, GstDebugCategory * category,
     GstVideoInfo info;
     GstStructure *caps_st = NULL;
     gint stride_y_align = 16, stride_x_align = 1;
+    gint adjusted_height = 0;
 
     if (!gst_video_info_from_caps (&info, caps)) {
       GST_CAT_ERROR_OBJECT (category, object,
@@ -641,15 +642,16 @@ gst_tiovx_get_exemplar_from_caps (GObject * object, GstDebugCategory * category,
     gst_structure_get_int (caps_st, "stride-y-align", &stride_y_align);
     gst_structure_get_int (caps_st, "stride-x-align", &stride_x_align);
 
-    GST_CAT_INFO_OBJECT (category, object,
-        "creating image with width: %d\t height: %d\t format: 0x%x",
-        info.width, info.height, gst_format_to_vx_format (info.finfo->format));
+    adjusted_height = ((info.height - 1)/stride_y_align) *
+                    stride_y_align + stride_y_align;
 
-    info.height = ((info.height - 1)/stride_x_align) *
-                    stride_x_align + stride_x_align;
+    GST_CAT_INFO_OBJECT (category, object,
+        "creating image with width: %d\t height: %d/%d\t format: 0x%x",
+        info.width, info.height, adjusted_height,
+	gst_format_to_vx_format (info.finfo->format));
 
     output = (vx_reference) vxCreateImage (context, info.width,
-        info.height, gst_format_to_vx_format (info.finfo->format));
+        adjusted_height, gst_format_to_vx_format (info.finfo->format));
 
     vxSetImageAttribute((vx_image)output, TIVX_IMAGE_STRIDE_Y_ALIGNMENT,
                         (void *)(&stride_y_align), sizeof(stride_y_align));
